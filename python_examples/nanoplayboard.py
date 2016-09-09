@@ -33,6 +33,12 @@ CP_BUZZER_PLAY_TONE  = 0x20  # Play a tone on the speaker. Sends next values:
                              #    (up to 2^14 ms, about 16s)
 CP_BUZZER_STOP_TONE  = 0x21  # Stop playing anything on the speaker.
 
+CP_RGB_ON            = 0x03
+CP_RGB_OFF           = 0x31
+CP_RGB_TOGGLE        = 0x32
+CP_RGB_SETCOLOR      = 0x33
+CP_RGB_SETINTENSITY  = 0x34
+
 class NanoPlayBoard(PyMata):
     def __init__(self, port_id='/dev/ttyACM0', bluetooth=True, verbose=True):
         PyMata.__init__(self, port_id, bluetooth, verbose)
@@ -56,6 +62,30 @@ class NanoPlayBoard(PyMata):
 
     def stop_tone(self):
         self._command_handler.send_sysex(CP_COMMAND, [CP_BUZZER_STOP_TONE])
+
+    def rgb_on(self):
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_ON])
+
+    def rgb_off(self):
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_OFF])
+
+    def rgb_toggle(self):
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_TOGGLE])
+
+    def rgb_set_color(self, red, green, blue):
+        red &= 0xFF
+        green &= 0xFF
+        blue &= 0xFF
+        b1 = red >> 1
+        b2 = ((red & 0x01) << 6) | (green >> 2)
+        b3 = ((green & 0x03) << 5) | (blue >> 3)
+        b4 = (blue & 0x07) << 4
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SETCOLOR, b1, b2, b3, b4])
+
+    def rgb_set_intensity(self, intensity):
+        # Pack 8 bits into 7 bits
+        b1 = intensity & 0x7F
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SETINTENSITY, b1])
 
     def _response_handler(self, data):
         print(data)
