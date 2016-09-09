@@ -1,33 +1,37 @@
-# NanoPlayBoard PyMata helper class.
-#
-# This is not an example, rather it's a class to add NanoPlayBoard-specific
-# commands to PyMata.  Make sure this file is in the same directory as the
-# examples!
-#
-# This class is based on the circuitplayground.py developed by: Tony DiCola
-#
-#  Copyright (C) 2016 Tony DiCola.  All rights reservered.
-#  Copyright (C) 2016 Jose Juan Sanchez.  All rights reservered.
-#
-# Licensed under the GNU General Public License, Version 3 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.gnu.org/licenses/gpl-3.0.en.html
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+ NanoPlayBoard PyMata helper class.
+
+ This is not an example, rather it's a class to add NanoPlayBoard-specific
+ commands to PyMata.  Make sure this file is in the same directory as the
+ examples!
+
+ This class is based on the circuitplayground.py developed by: Tony DiCola
+
+  Copyright (C) 2016 Tony DiCola.  All rights reserved.
+  Copyright (C) 2016 Jose Juan Sanchez.  All rights reserved.
+
+ Licensed under the GNU General Public License, Version 3 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+    http://www.gnu.org/licenses/gpl-3.0.en.html
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+"""
 
 from PyMata.pymata import PyMata
 
-CP_COMMAND  = 0x40  # Byte that identifies all NanoPlayBoard commands.
-CP_TONE     = 0x20  # Play a tone on the speaker, expects the following bytes as data:
-                    #  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
-                    #  - Duration (ms) as 2 7-bit bytes.
-CP_NO_TONE  = 0x21  # Stop playing anything on the speaker.
+CP_COMMAND           = 0x40  # Byte that identifies all NanoPlayBoard commands.
+CP_BUZZER_PLAY_TONE  = 0x20  # Play a tone on the speaker. Sends next values:
+                             #  - Frequency (hz). 2 7-bit bytes
+                             #    (up to 2^14 hz, about 16khz)
+                             #  - Duration (ms). 2 7-bit bytes
+                             #    (up to 2^14 ms, about 16s)
+CP_BUZZER_STOP_TONE  = 0x21  # Stop playing anything on the speaker.
 
 class NanoPlayBoard(PyMata):
     def __init__(self, port_id='/dev/ttyACM0', bluetooth=True, verbose=True):
@@ -48,10 +52,10 @@ class NanoPlayBoard(PyMata):
         duration_ms &= 0x3FFF
         d1 = duration_ms & 0x7F
         d2 = duration_ms >> 7
-        self._command_handler.send_sysex(CP_COMMAND, [CP_TONE, f1, f2, d1, d2])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_BUZZER_PLAY_TONE, f1, f2, d1, d2])
 
     def stop_tone(self):
-        self._command_handler.send_sysex(CP_COMMAND, [CP_NO_TONE])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_BUZZER_STOP_TONE])
 
     def _response_handler(self, data):
         print(data)
