@@ -26,8 +26,6 @@
   version 2.1 of the License, or (at your option) any later version.
 
   See file LICENSE.txt for further informations on licensing terms.
-
-  Last updated by Jeff Hoefs: January 10th, 2016
 */
 
 #include <Servo.h>
@@ -70,6 +68,9 @@
 #define CP_RGB_TOGGLE           0X32
 #define CP_RGB_SETCOLOR         0X33
 #define CP_RGB_SETINTENSITY     0X34
+
+#define CP_POTENTIO_READ        0x40
+#define CP_POTENTIO_SCALETO     0x41
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -482,6 +483,24 @@ void reportDigitalCallback(byte port, int value)
  * NanoPlayBoard commands
  *============================================================================*/
 
+// Send a response back to the host computer with the potentiometer value
+void sendPotentiometerReadResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint16_t value;
+    } data;
+    uint8_t bytes[3];
+  } response;
+
+  response.data.type = CP_POTENTIO_READ;
+  response.data.value = board.potentiometer.read();
+
+  // Send the response.
+  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+}
+
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
     case CP_BUZZER_PLAY_TONE:
@@ -541,6 +560,10 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         }
         board.rgb.setIntensity(intensity);
       }
+      break;
+
+    case CP_POTENTIO_READ:
+      sendPotentiometerReadResponse();
       break;
   }
 }
