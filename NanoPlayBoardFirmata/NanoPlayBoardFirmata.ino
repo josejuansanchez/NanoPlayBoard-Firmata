@@ -34,6 +34,14 @@
 #include <Wire.h>
 #include <Firmata.h>
 #include <NanoPlayBoard.h>
+#include <SoftwareSerial.h>
+
+// Uncomment below to enable debug output.
+#define DEBUG_MODE
+
+#ifdef DEBUG_MODE
+  SoftwareSerial btSerial(7, 8); // RX, TX
+#endif
 
 #define I2C_WRITE                   B00000000
 #define I2C_READ                    B00001000
@@ -804,6 +812,12 @@ void systemResetCallback()
 
 void setup()
 {
+  // NanoPlayBoard debug setup
+#ifdef DEBUG_MODE
+  btSerial.begin(9600);
+  btSerial.println("NanoPlayBoard Firmata starting up!");
+#endif
+
   Firmata.setFirmwareVersion(FIRMATA_FIRMWARE_MAJOR_VERSION, FIRMATA_FIRMWARE_MINOR_VERSION);
 
   Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
