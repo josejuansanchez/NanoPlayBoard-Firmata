@@ -39,7 +39,7 @@
 #define DEBUG_MODE
 
 #ifdef DEBUG_MODE
-#include <SoftwareSerial.h>
+  #include <SoftwareSerial.h>
   SoftwareSerial btSerial(7, 8); // RX, TX
 #endif
 
@@ -65,6 +65,11 @@
                                       //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
 #define CP_BUZZER_STOP_TONE     0x21  // Stop playing anything on the speaker.
 
+#define CP_RGB_ON               0X30
+#define CP_RGB_OFF              0X31
+#define CP_RGB_TOGGLE           0X32
+#define CP_RGB_SETCOLOR         0X33
+#define CP_RGB_SETINTENSITY     0X34
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -496,6 +501,46 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
 
     case CP_BUZZER_STOP_TONE:
       board.buzzer.stopTone();
+      break;
+
+    case CP_RGB_ON:
+      board.rgb.on();
+      break;
+
+    case CP_RGB_OFF:
+      board.rgb.off();
+      break;
+
+    case CP_RGB_TOGGLE:
+      board.rgb.toggle();
+      break;
+
+    case CP_RGB_SETCOLOR:
+      // Expect: 4 bytes pixel RGB value (as 7-bit bytes)
+      if (argc >= 4) {
+        // Red = 7 bits from byte 1 and 1 bit from byte 2
+        uint8_t r = (argv[0] << 1) | ((argv[1] & 0x7F) >> 6);
+
+        // Green = 6 bits from byte 2 and 2 bits from byte 3
+        uint8_t g = ((argv[1] & 0x3F) << 2) | (((argv[2]) & 0x7F) >> 5);
+
+          // Blue = 5 bits from byte 3 and 3 bits from byte 4
+        uint8_t b = ((argv[2] & 0x1F) << 3) | (((argv[3]) & 0x7F) >> 4);
+
+        board.rgb.setColor(r, g, b);
+      }
+
+      break;
+
+    case CP_RGB_SETINTENSITY:
+      // Expects 1 byte with the intensity as a value 0-100.
+      if (argc >= 1) {
+        uint8_t intensity = argv[0];
+        if (intensity > 100) {
+          intensity = 100;
+        }
+        board.rgb.setIntensity(intensity);
+      }
       break;
   }
 }
