@@ -22,7 +22,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+import logging
+import struct
+from binascii import hexlify
 from PyMata.pymata import PyMata
 
 CP_COMMAND           = 0x40  # Byte that identifies all NanoPlayBoard commands.
@@ -39,10 +41,17 @@ CP_RGB_TOGGLE        = 0x32
 CP_RGB_SETCOLOR      = 0x33
 CP_RGB_SETINTENSITY  = 0x34
 
+CP_POTENTIO_READ     = 0x40
+CP_POTENTIO_SCALETO  = 0x41
+
+
+logger = logging.getLogger(__name__)
+
 class NanoPlayBoard(PyMata):
     def __init__(self, port_id='/dev/ttyACM0', bluetooth=True, verbose=True):
         PyMata.__init__(self, port_id, bluetooth, verbose)
         self._command_handler.command_dispatch.update({CP_COMMAND: [self._response_handler, 1]})
+        self._potentiometer_callback = None
 
     def play_tone(self, frequency_hz, duration_ms=0):
         # Note:
@@ -87,5 +96,63 @@ class NanoPlayBoard(PyMata):
         b1 = intensity & 0x7F
         self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SETINTENSITY, b1])
 
+    def potentiometer_read(self, callback):
+        self._potentiometer_callback = callback
+        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_READ])
+
+    def _parse_firmata_byte(self, data):
+        """Parse a byte value from two 7-bit byte firmata response bytes."""
+        if len(data) != 2:
+            raise ValueError('Expected 2 bytes of firmata repsonse for a byte value!')
+        return (data[0] & 0x7F) | ((data[1] & 0x01) << 7)
+
+    def _parse_firmata_long(self, data):
+        """Parse a 4 byte signed long integer value from a 7-bit byte firmata response
+        byte array.  Each pair of firmata 7-bit response bytes represents a single
+        byte of long data so there should be 8 firmata response bytes total.
+        """
+        if len(data) != 8:
+            raise ValueError('Expected 8 bytes of firmata response for long value!')
+        # Convert 2 7-bit bytes in little endian format to 1 8-bit byte for each
+        # of the four floating point bytes.
+        raw_bytes = bytearray(4)
+        for i in range(4):
+            raw_bytes[i] = self._parse_firmata_byte(data[i*2:i*2+2])
+        # Use struct unpack to convert to floating point value.
+        return struct.unpack('<l', raw_bytes)[0]
+
+    def _parse_firmata_uint16(self, data):
+        """Parse a 2 byte unsigned integer value from a 7-bit byte firmata response
+        byte array.  Each pair of firmata 7-bit response bytes represents a single
+        byte of int data so there should be 4 firmata response bytes total.
+        """
+        if len(data) != 4:
+            raise ValueError('Expected 4 bytes of firmata response for int value!')
+        # Convert 2 7-bit bytes in little endian format to 1 8-bit byte for each
+        # of the two unsigned int bytes.
+        raw_bytes = bytearray(2)
+        for i in range(2):
+            raw_bytes[i] = self._parse_firmata_byte(data[i*2:i*2+2])
+        # Use struct unpack to convert to unsigned short value.
+        return struct.unpack('<H', raw_bytes)[0]
+
     def _response_handler(self, data):
-        print(data)
+        # Callback invoked when a nanoplayboard sysex command is received.
+        logger.debug('CP response: 0x{0}'.format(hexlify(bytearray(data))))
+
+        if len(data) < 1:
+            logger.warning('Received response with no data!')
+            return
+
+        # Check what type of response has been received.
+        command = data[0] & 0x7F
+
+        if command == CP_POTENTIO_READ:
+            # Parse potentiometer response
+            if len(data) < 6:
+                logger.warning('Received potentiometer response with not enough data!')
+                return
+
+            pot_value = self._parse_firmata_uint16(data[2:6])
+            if self._potentiometer_callback is not None:
+                self._potentiometer_callback(pot_value)
