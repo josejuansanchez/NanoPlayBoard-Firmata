@@ -34,12 +34,12 @@
 #include <Wire.h>
 #include <Firmata.h>
 #include <NanoPlayBoard.h>
-#include <SoftwareSerial.h>
 
 // Uncomment below to enable debug output.
 #define DEBUG_MODE
 
 #ifdef DEBUG_MODE
+  #include <SoftwareSerial.h>
   SoftwareSerial btSerial(7, 8); // RX, TX
 #endif
 
