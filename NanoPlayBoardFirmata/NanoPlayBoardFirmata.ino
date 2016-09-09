@@ -39,7 +39,7 @@
 #define DEBUG_MODE
 
 #ifdef DEBUG_MODE
-  #include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
   SoftwareSerial btSerial(7, 8); // RX, TX
 #endif
 
@@ -60,10 +60,10 @@
 
 // NanoPlayBoard specific Firmata SysEx commands:
 #define CP_COMMAND              0x40  // Byte that identifies all NanoPlayBoard commands.
-#define CP_TONE                 0x20  // Play a tone on the speaker, expects the following bytes as data:
+#define CP_BUZZER_PLAY_TONE     0x20  // Play a tone on the speaker, expects the following bytes as data:
                                       //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
-                                      //  - Duration (ms) as 2 7-bit bytes.
-#define CP_NO_TONE              0x21  // Stop playing anything on the speaker.
+                                      //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
+#define CP_BUZZER_STOP_TONE     0x21  // Stop playing anything on the speaker.
 
 
 // TODO: Fix this issue. Temporary solution.
@@ -479,7 +479,7 @@ void reportDigitalCallback(byte port, int value)
 
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
-    case CP_TONE:
+    case CP_BUZZER_PLAY_TONE:
       // Play a tone on the speaker.
       // Expect: 2 bytes tone frequency, 2 bytes tone duration
       if (argc >= 4) {
@@ -494,7 +494,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_NO_TONE:
+    case CP_BUZZER_STOP_TONE:
       board.buzzer.stopTone();
       break;
   }
