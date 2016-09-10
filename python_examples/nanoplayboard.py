@@ -44,6 +44,8 @@ CP_RGB_SET_INTENSITY = 0x34
 CP_POTENTIO_READ     = 0x40
 CP_POTENTIO_SCALE_TO = 0x41
 
+CP_LDR_READ          = 0x50
+CP_LDR_SCALE_TO      = 0x51
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +54,7 @@ class NanoPlayBoard(PyMata):
         PyMata.__init__(self, port_id, bluetooth, verbose)
         self._command_handler.command_dispatch.update({CP_COMMAND: [self._response_handler, 1]})
         self._potentiometer_callback = None
+        self._ldr_callback = None
 
     def play_tone(self, frequency_hz, duration_ms=0):
         # Note:
@@ -113,6 +116,10 @@ class NanoPlayBoard(PyMata):
 
         self._potentiometer_callback = callback
         self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_SCALE_TO, l1, l2, h1, h2])
+
+    def ldr_read(self, callback):
+        self._ldr_callback = callback
+        self._command_handler.send_sysex(CP_COMMAND, [CP_LDR_READ])
 
     def _parse_firmata_byte(self, data):
         """Parse a byte value from two 7-bit byte firmata response bytes."""
@@ -181,3 +188,12 @@ class NanoPlayBoard(PyMata):
             if self._potentiometer_callback is not None:
                 self._potentiometer_callback(pot_value)
 
+        elif command == CP_LDR_READ:
+            # Parse ldr response
+            if len(data) < 6:
+                logger.warning('Received ldr response with not enough data!')
+                return
+
+            ldr_value = self._parse_firmata_uint16(data[2:6])
+            if self._ldr_callback is not None:
+                self._ldr_callback(ldr_value)
