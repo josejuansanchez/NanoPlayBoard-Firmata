@@ -38,11 +38,11 @@ CP_BUZZER_STOP_TONE  = 0x21  # Stop playing anything on the speaker.
 CP_RGB_ON            = 0x03
 CP_RGB_OFF           = 0x31
 CP_RGB_TOGGLE        = 0x32
-CP_RGB_SETCOLOR      = 0x33
-CP_RGB_SETINTENSITY  = 0x34
+CP_RGB_SET_COLOR     = 0x33
+CP_RGB_SET_INTENSITY = 0x34
 
 CP_POTENTIO_READ     = 0x40
-CP_POTENTIO_SCALETO  = 0x41
+CP_POTENTIO_SCALE_TO = 0x41
 
 
 logger = logging.getLogger(__name__)
@@ -89,16 +89,30 @@ class NanoPlayBoard(PyMata):
         b2 = ((red & 0x01) << 6) | (green >> 2)
         b3 = ((green & 0x03) << 5) | (blue >> 3)
         b4 = (blue & 0x07) << 4
-        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SETCOLOR, b1, b2, b3, b4])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SET_COLOR, b1, b2, b3, b4])
 
     def rgb_set_intensity(self, intensity):
         # Pack 8 bits into 7 bits
         b1 = intensity & 0x7F
-        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SETINTENSITY, b1])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_RGB_SET_INTENSITY, b1])
 
     def potentiometer_read(self, callback):
         self._potentiometer_callback = callback
         self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_READ])
+
+    def potentiometer_scale_to(self, to_low, to_high, callback):
+        # Pack 14-bits into 2 7-bit bytes.
+        to_low &= 0x3FFF
+        l1 = to_low & 0x7F
+        l2 = to_low >> 7
+
+        # Again pack 14-bits into 2 7-bit bytes.
+        to_high &= 0x3FFF
+        h1 = to_high & 0x7F
+        h2 = to_high >> 7
+
+        self._potentiometer_callback = callback
+        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_SCALE_TO, l1, l2, h1, h2])
 
     def _parse_firmata_byte(self, data):
         """Parse a byte value from two 7-bit byte firmata response bytes."""
@@ -114,11 +128,11 @@ class NanoPlayBoard(PyMata):
         if len(data) != 8:
             raise ValueError('Expected 8 bytes of firmata response for long value!')
         # Convert 2 7-bit bytes in little endian format to 1 8-bit byte for each
-        # of the four floating point bytes.
+        # of the four long bytes.
         raw_bytes = bytearray(4)
         for i in range(4):
             raw_bytes[i] = self._parse_firmata_byte(data[i*2:i*2+2])
-        # Use struct unpack to convert to floating point value.
+        # Use struct unpack to convert to long value.
         return struct.unpack('<l', raw_bytes)[0]
 
     def _parse_firmata_uint16(self, data):
@@ -156,3 +170,14 @@ class NanoPlayBoard(PyMata):
             pot_value = self._parse_firmata_uint16(data[2:6])
             if self._potentiometer_callback is not None:
                 self._potentiometer_callback(pot_value)
+
+        elif command == CP_POTENTIO_SCALE_TO:
+            # Parse potentiometer response
+            if len(data) < 6:
+                logger.warning('Received potentiometer response with not enough data!')
+                return
+
+            pot_value = self._parse_firmata_uint16(data[2:6])
+            if self._potentiometer_callback is not None:
+                self._potentiometer_callback(pot_value)
+
