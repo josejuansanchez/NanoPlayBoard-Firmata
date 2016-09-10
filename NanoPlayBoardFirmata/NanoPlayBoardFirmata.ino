@@ -539,6 +539,22 @@ void sendLdrReadResponse() {
   Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
 }
 
+void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint16_t value;
+    } data;
+    uint8_t bytes[3];
+  } response;
+
+  response.data.type = CP_LDR_SCALE_TO;
+  response.data.value = board.ldr.scaleTo(toLow, toHigh);
+
+  // Send the response.
+  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+}
 
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
@@ -615,6 +631,15 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
 
     case CP_LDR_READ:
       sendLdrReadResponse();
+      break;
+
+    case CP_LDR_SCALE_TO:
+      // Expect: 2 bytes toLow, 2 bytes toHigh
+      if (argc >= 4) {
+        uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
+        uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
+        sendLdrScaleToResponse(toLow, toHigh);
+      }
       break;
   }
 }
