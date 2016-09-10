@@ -66,11 +66,11 @@
 #define CP_RGB_ON               0X30
 #define CP_RGB_OFF              0X31
 #define CP_RGB_TOGGLE           0X32
-#define CP_RGB_SETCOLOR         0X33
-#define CP_RGB_SETINTENSITY     0X34
+#define CP_RGB_SET_COLOR        0X33
+#define CP_RGB_SET_INTENSITY    0X34
 
 #define CP_POTENTIO_READ        0x40
-#define CP_POTENTIO_SCALETO     0x41
+#define CP_POTENTIO_SCALE_TO    0x41
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -501,6 +501,23 @@ void sendPotentiometerReadResponse() {
   Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
 }
 
+void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint16_t value;
+    } data;
+    uint8_t bytes[3];
+  } response;
+
+  response.data.type = CP_POTENTIO_SCALE_TO;
+  response.data.value = board.potentiometer.scaleTo(toLow, toHigh);
+
+  // Send the response.
+  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+}
+
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
     case CP_BUZZER_PLAY_TONE:
@@ -534,7 +551,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       board.rgb.toggle();
       break;
 
-    case CP_RGB_SETCOLOR:
+    case CP_RGB_SET_COLOR:
       // Expect: 4 bytes pixel RGB value (as 7-bit bytes)
       if (argc >= 4) {
         // Red = 7 bits from byte 1 and 1 bit from byte 2
@@ -548,10 +565,9 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
 
         board.rgb.setColor(r, g, b);
       }
-
       break;
 
-    case CP_RGB_SETINTENSITY:
+    case CP_RGB_SET_INTENSITY:
       // Expects 1 byte with the intensity as a value 0-100.
       if (argc >= 1) {
         uint8_t intensity = argv[0];
@@ -564,6 +580,16 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
 
     case CP_POTENTIO_READ:
       sendPotentiometerReadResponse();
+      break;
+
+    case CP_POTENTIO_SCALE_TO:
+      // Expect: 2 bytes toLow, 2 bytes toHigh
+      if (argc >= 4) {
+        uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
+        uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
+
+        sendPotentiometerScaleToResponse(toLow, toHigh);
+      }
       break;
   }
 }
