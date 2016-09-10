@@ -72,6 +72,10 @@
 #define CP_POTENTIO_READ        0x40
 #define CP_POTENTIO_SCALE_TO    0x41
 
+#define CP_LDR_READ             0x50
+#define CP_LDR_SCALE_TO         0x51
+
+
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
 // Method declarations are needed before use it.
@@ -518,6 +522,24 @@ void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
   Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
 }
 
+void sendLdrReadResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint16_t value;
+    } data;
+    uint8_t bytes[3];
+  } response;
+
+  response.data.type = CP_LDR_READ;
+  response.data.value = board.ldr.read();
+
+  // Send the response.
+  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+}
+
+
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
     case CP_BUZZER_PLAY_TONE:
@@ -587,9 +609,12 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
-
         sendPotentiometerScaleToResponse(toLow, toHigh);
       }
+      break;
+
+    case CP_LDR_READ:
+      sendLdrReadResponse();
       break;
   }
 }
