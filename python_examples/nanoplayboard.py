@@ -121,6 +121,20 @@ class NanoPlayBoard(PyMata):
         self._ldr_callback = callback
         self._command_handler.send_sysex(CP_COMMAND, [CP_LDR_READ])
 
+    def ldr_scale_to(self, to_low, to_high, callback):
+        # Pack 14-bits into 2 7-bit bytes.
+        to_low &= 0x3FFF
+        l1 = to_low & 0x7F
+        l2 = to_low >> 7
+
+        # Again pack 14-bits into 2 7-bit bytes.
+        to_high &= 0x3FFF
+        h1 = to_high & 0x7F
+        h2 = to_high >> 7
+
+        self._ldr_callback = callback
+        self._command_handler.send_sysex(CP_COMMAND, [CP_LDR_SCALE_TO, l1, l2, h1, h2])
+
     def _parse_firmata_byte(self, data):
         """Parse a byte value from two 7-bit byte firmata response bytes."""
         if len(data) != 2:
@@ -190,6 +204,16 @@ class NanoPlayBoard(PyMata):
 
         elif command == CP_LDR_READ:
             # Parse ldr response
+            if len(data) < 6:
+                logger.warning('Received ldr response with not enough data!')
+                return
+
+            ldr_value = self._parse_firmata_uint16(data[2:6])
+            if self._ldr_callback is not None:
+                self._ldr_callback(ldr_value)
+
+        elif command == CP_LDR_SCALE_TO:
+            # Parse potentiometer response
             if len(data) < 6:
                 logger.warning('Received ldr response with not enough data!')
                 return
