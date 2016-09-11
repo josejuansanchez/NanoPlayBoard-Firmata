@@ -625,7 +625,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case CP_POTENTIOMETER_SCALE_TO:
-      // Expect: 2 bytes toLow, 2 bytes toHigh
+      // Expect: 2 bytes for toLow and 2 bytes for toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
@@ -657,6 +657,17 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         pattern[4] = argv[4] & 0x7F;
 
         board.ledmatrix.print(pattern);
+      }
+      break;
+
+    case CP_LEDMATRIX_PRINT_IN_LAND:
+      // Expects 1 byte with a number inside the range 0-99.
+      if (argc >= 1) {
+        uint8_t number = argv[0];
+        if (number > 99) {
+          number = 99;
+        }
+        board.ledmatrix.printInLandscape(number);
       }
       break;
   }
