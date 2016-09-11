@@ -151,6 +151,11 @@ class NanoPlayBoard(PyMata):
         self._command_handler.send_sysex(CP_COMMAND, [CP_LEDMATRIX_PRINT,
             pattern[0], pattern[1], pattern[2], pattern[3], pattern[4]])
 
+    def ledmatrix_print_in_landscape(self, number):
+        # Pack 8 bits into 7 bits
+        b1 = number & 0x7F
+        self._command_handler.send_sysex(CP_COMMAND, [CP_LEDMATRIX_PRINT_IN_LAND, b1])
+
     def _parse_firmata_byte(self, data):
         """Parse a byte value from two 7-bit byte firmata response bytes."""
         if len(data) != 2:
