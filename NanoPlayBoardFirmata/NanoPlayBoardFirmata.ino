@@ -57,26 +57,28 @@
 #define MINIMUM_SAMPLING_INTERVAL   1
 
 // NanoPlayBoard specific Firmata SysEx commands:
-#define CP_COMMAND              0x40  // Byte that identifies all NanoPlayBoard commands.
-#define CP_BUZZER_PLAY_TONE     0x20  // Play a tone on the speaker, expects the following bytes as data:
-                                      //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
-                                      //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
-#define CP_BUZZER_STOP_TONE     0x21  // Stop playing anything on the speaker.
+#define CP_COMMAND                  0x40  // Byte that identifies all NanoPlayBoard commands.
+#define CP_BUZZER_PLAY_TONE         0x20  // Play a tone on the speaker, expects the following bytes as data:
+                                          //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
+                                          //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
+#define CP_BUZZER_STOP_TONE         0x21  // Stop playing anything on the speaker.
 
-#define CP_RGB_ON               0X30
-#define CP_RGB_OFF              0X31
-#define CP_RGB_TOGGLE           0X32
-#define CP_RGB_SET_COLOR        0X33
-#define CP_RGB_SET_INTENSITY    0X34
+#define CP_RGB_ON                   0X30
+#define CP_RGB_OFF                  0X31
+#define CP_RGB_TOGGLE               0X32
+#define CP_RGB_SET_COLOR            0X33
+#define CP_RGB_SET_INTENSITY        0X34
 
-#define CP_POTENTIO_READ        0x40
-#define CP_POTENTIO_SCALE_TO    0x41
+#define CP_POTENTIOMETER_READ       0x40
+#define CP_POTENTIOMETER_SCALE_TO   0x41
 
-#define CP_LDR_READ             0x50
-#define CP_LDR_SCALE_TO         0x51
+#define CP_LDR_READ                 0x50
+#define CP_LDR_SCALE_TO             0x51
 
-#define CP_LEDMATRIX_PRINT      0x60
-
+#define CP_LEDMATRIX_PRINT_CHAR     0x60
+#define CP_LEDMATRIX_PRINT_PATTERN  0x61
+#define CP_LEDMATRIX_PRINT_STRING   0x62
+#define CP_LEDMATRIX_PRINT_IN_LAND  0x63
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -500,7 +502,7 @@ void sendPotentiometerReadResponse() {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_POTENTIO_READ;
+  response.data.type = CP_POTENTIOMETER_READ;
   response.data.value = board.potentiometer.read();
 
   // Send the response.
@@ -517,7 +519,7 @@ void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_POTENTIO_SCALE_TO;
+  response.data.type = CP_POTENTIOMETER_SCALE_TO;
   response.data.value = board.potentiometer.scaleTo(toLow, toHigh);
 
   // Send the response.
@@ -618,11 +620,11 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_POTENTIO_READ:
+    case CP_POTENTIOMETER_READ:
       sendPotentiometerReadResponse();
       break;
 
-    case CP_POTENTIO_SCALE_TO:
+    case CP_POTENTIOMETER_SCALE_TO:
       // Expect: 2 bytes toLow, 2 bytes toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
@@ -644,7 +646,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_LEDMATRIX_PRINT:
+    case CP_LEDMATRIX_PRINT_PATTERN:
       // Expect: 5 bytes, 1 byte for each column
       if (argc >= 5) {
         byte pattern[5];

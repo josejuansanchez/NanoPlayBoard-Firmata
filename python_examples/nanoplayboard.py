@@ -27,27 +27,31 @@ import struct
 from binascii import hexlify
 from PyMata.pymata import PyMata
 
-CP_COMMAND           = 0x40  # Byte that identifies all NanoPlayBoard commands.
-CP_BUZZER_PLAY_TONE  = 0x20  # Play a tone on the speaker. Sends next values:
-                             #  - Frequency (hz). 2 7-bit bytes
-                             #    (up to 2^14 hz, about 16khz)
-                             #  - Duration (ms). 2 7-bit bytes
-                             #    (up to 2^14 ms, about 16s)
-CP_BUZZER_STOP_TONE  = 0x21  # Stop playing anything on the speaker.
+CP_COMMAND                 = 0x40  # Byte that identifies all NanoPlayBoard commands.
+CP_BUZZER_PLAY_TONE        = 0x20  # Play a tone on the speaker. Sends next values:
+                                   #  - Frequency (hz). 2 7-bit bytes
+                                   #    (up to 2^14 hz, about 16khz)
+                                   #  - Duration (ms). 2 7-bit bytes
+                                   #    (up to 2^14 ms, about 16s)
+CP_BUZZER_STOP_TONE        = 0x21  # Stop playing anything on the speaker.
 
-CP_RGB_ON            = 0x03
-CP_RGB_OFF           = 0x31
-CP_RGB_TOGGLE        = 0x32
-CP_RGB_SET_COLOR     = 0x33
-CP_RGB_SET_INTENSITY = 0x34
+CP_RGB_ON                  = 0x30
+CP_RGB_OFF                 = 0x31
+CP_RGB_TOGGLE              = 0x32
+CP_RGB_SET_COLOR           = 0x33
+CP_RGB_SET_INTENSITY       = 0x34
 
-CP_POTENTIO_READ     = 0x40
-CP_POTENTIO_SCALE_TO = 0x41
+CP_POTENTIOMETER_READ      = 0x40
+CP_POTENTIOMETER_SCALE_TO  = 0x41
 
-CP_LDR_READ          = 0x50
-CP_LDR_SCALE_TO      = 0x51
+CP_LDR_READ                = 0x50
+CP_LDR_SCALE_TO            = 0x51
 
-CP_LEDMATRIX_PRINT   = 0x60
+CP_LEDMATRIX_PRINT_CHAR    = 0x60
+CP_LEDMATRIX_PRINT_PATTERN = 0x61
+CP_LEDMATRIX_PRINT_STRING  = 0x62
+CP_LEDMATRIX_PRINT_IN_LAND = 0x63
+
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +107,7 @@ class NanoPlayBoard(PyMata):
 
     def potentiometer_read(self, callback):
         self._potentiometer_callback = callback
-        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_READ])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIOMETER_READ])
 
     def potentiometer_scale_to(self, to_low, to_high, callback):
         # Pack 14-bits into 2 7-bit bytes.
@@ -117,7 +121,7 @@ class NanoPlayBoard(PyMata):
         h2 = to_high >> 7
 
         self._potentiometer_callback = callback
-        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIO_SCALE_TO, l1, l2, h1, h2])
+        self._command_handler.send_sysex(CP_COMMAND, [CP_POTENTIOMETER_SCALE_TO, l1, l2, h1, h2])
 
     def ldr_read(self, callback):
         self._ldr_callback = callback
@@ -194,7 +198,7 @@ class NanoPlayBoard(PyMata):
         # Check what type of response has been received.
         command = data[0] & 0x7F
 
-        if command == CP_POTENTIO_READ:
+        if command == CP_POTENTIOMETER_READ:
             # Parse potentiometer response
             if len(data) < 6:
                 logger.warning('Received potentiometer response with not enough data!')
@@ -204,7 +208,7 @@ class NanoPlayBoard(PyMata):
             if self._potentiometer_callback is not None:
                 self._potentiometer_callback(pot_value)
 
-        elif command == CP_POTENTIO_SCALE_TO:
+        elif command == CP_POTENTIOMETER_SCALE_TO:
             # Parse potentiometer response
             if len(data) < 6:
                 logger.warning('Received potentiometer response with not enough data!')
