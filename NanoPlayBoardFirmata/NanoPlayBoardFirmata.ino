@@ -75,6 +75,8 @@
 #define CP_LDR_READ             0x50
 #define CP_LDR_SCALE_TO         0x51
 
+#define CP_LEDMATRIX_PRINT      0x60
+
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -639,6 +641,20 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
         sendLdrScaleToResponse(toLow, toHigh);
+      }
+      break;
+
+    case CP_LEDMATRIX_PRINT:
+      // Expect: 5 bytes, 1 byte for each column
+      if (argc >= 5) {
+        byte pattern[5];
+        pattern[0] = argv[0] & 0x7F;
+        pattern[1] = argv[1] & 0x7F;
+        pattern[2] = argv[2] & 0x7F;
+        pattern[3] = argv[3] & 0x7F;
+        pattern[4] = argv[4] & 0x7F;
+
+        board.ledmatrix.print(pattern);
       }
       break;
   }
