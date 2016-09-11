@@ -47,6 +47,8 @@ CP_POTENTIO_SCALE_TO = 0x41
 CP_LDR_READ          = 0x50
 CP_LDR_SCALE_TO      = 0x51
 
+CP_LEDMATRIX_PRINT   = 0x60
+
 logger = logging.getLogger(__name__)
 
 class NanoPlayBoard(PyMata):
@@ -135,6 +137,16 @@ class NanoPlayBoard(PyMata):
         self._ldr_callback = callback
         self._command_handler.send_sysex(CP_COMMAND, [CP_LDR_SCALE_TO, l1, l2, h1, h2])
 
+    def ledmatrix_print(self, pattern):
+        pattern[0] &= 0x7F
+        pattern[1] &= 0x7F
+        pattern[2] &= 0x7F
+        pattern[3] &= 0x7F
+        pattern[4] &= 0x7F
+
+        self._command_handler.send_sysex(CP_COMMAND, [CP_LEDMATRIX_PRINT,
+            pattern[0], pattern[1], pattern[2], pattern[3], pattern[4]])
+
     def _parse_firmata_byte(self, data):
         """Parse a byte value from two 7-bit byte firmata response bytes."""
         if len(data) != 2:
@@ -213,7 +225,7 @@ class NanoPlayBoard(PyMata):
                 self._ldr_callback(ldr_value)
 
         elif command == CP_LDR_SCALE_TO:
-            # Parse potentiometer response
+            # Parse ldr response
             if len(data) < 6:
                 logger.warning('Received ldr response with not enough data!')
                 return
