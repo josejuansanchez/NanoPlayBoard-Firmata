@@ -34,7 +34,7 @@
 #include <NanoPlayBoard.h>
 
 // Uncomment below to enable debug output.
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 #ifdef DEBUG_MODE
   #include <SoftwareSerial.h>
@@ -136,8 +136,19 @@ byte servoCount = 0;
 
 boolean isResetting = false;
 
-/* NanoPlayBoard instance */
+/* NanoPlayBoard globals */
 NanoPlayBoard board;
+
+boolean updateLedmatrixChar = false;
+boolean updateLedmatrixPattern = false;
+
+typedef struct {
+  byte symbol;
+  byte pattern[5];
+} global_board_parameters;
+
+global_board_parameters ledmatrix_parameters;
+
 
 /* utility functions */
 void wireWrite(byte data)
@@ -646,17 +657,25 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
+    case CP_LEDMATRIX_PRINT_CHAR:
+      // Expects 1 byte with an ascii code inside the range 32-126.
+      if (argc >= 1) {
+        updateLedmatrixChar = true;
+        ledmatrix_parameters.symbol = argv[0];
+        board.ledmatrix.print(ledmatrix_parameters.symbol);
+      }
+      break;
+
     case CP_LEDMATRIX_PRINT_PATTERN:
       // Expect: 5 bytes, 1 byte for each column
       if (argc >= 5) {
-        byte pattern[5];
-        pattern[0] = argv[0] & 0x7F;
-        pattern[1] = argv[1] & 0x7F;
-        pattern[2] = argv[2] & 0x7F;
-        pattern[3] = argv[3] & 0x7F;
-        pattern[4] = argv[4] & 0x7F;
-
-        board.ledmatrix.print(pattern);
+        updateLedmatrixPattern = true;
+        ledmatrix_parameters.pattern[0] = argv[0] & 0x7F;
+        ledmatrix_parameters.pattern[1] = argv[1] & 0x7F;
+        ledmatrix_parameters.pattern[2] = argv[2] & 0x7F;
+        ledmatrix_parameters.pattern[3] = argv[3] & 0x7F;
+        ledmatrix_parameters.pattern[4] = argv[4] & 0x7F;
+        board.ledmatrix.print(ledmatrix_parameters.pattern);
       }
       break;
 
@@ -1051,6 +1070,14 @@ void loop()
       for (byte i = 0; i < queryIndex + 1; i++) {
         readAndReportData(query[i].addr, query[i].reg, query[i].bytes, query[i].stopTX);
       }
+    }
+
+    if (updateLedmatrixChar) {
+      board.ledmatrix.print(ledmatrix_parameters.symbol);
+    }
+
+    if (updateLedmatrixPattern) {
+      board.ledmatrix.print(ledmatrix_parameters.pattern);
     }
   }
 
