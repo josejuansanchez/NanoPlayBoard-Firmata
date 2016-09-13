@@ -201,6 +201,8 @@ class NanoPlayBoard(PyMata):
         # Callback invoked when a nanoplayboard sysex command is received.
         logger.debug('CP response: 0x{0}'.format(hexlify(bytearray(data))))
 
+        print('CP response: 0x{0}'.format(hexlify(bytearray(data))))
+
         if len(data) < 1:
             logger.warning('Received response with no data!')
             return
@@ -208,7 +210,7 @@ class NanoPlayBoard(PyMata):
         # Check what type of response has been received.
         command = data[0] & 0x7F
 
-        if command == CP_POTENTIOMETER_READ:
+        if command == CP_POTENTIOMETER_READ or command == CP_POTENTIOMETER_SCALE_TO:
             # Parse potentiometer response
             if len(data) < 6:
                 logger.warning('Received potentiometer response with not enough data!')
@@ -218,27 +220,7 @@ class NanoPlayBoard(PyMata):
             if self._potentiometer_callback is not None:
                 self._potentiometer_callback(pot_value)
 
-        elif command == CP_POTENTIOMETER_SCALE_TO:
-            # Parse potentiometer response
-            if len(data) < 6:
-                logger.warning('Received potentiometer response with not enough data!')
-                return
-
-            pot_value = self._parse_firmata_uint16(data[2:6])
-            if self._potentiometer_callback is not None:
-                self._potentiometer_callback(pot_value)
-
-        elif command == CP_LDR_READ:
-            # Parse ldr response
-            if len(data) < 6:
-                logger.warning('Received ldr response with not enough data!')
-                return
-
-            ldr_value = self._parse_firmata_uint16(data[2:6])
-            if self._ldr_callback is not None:
-                self._ldr_callback(ldr_value)
-
-        elif command == CP_LDR_SCALE_TO:
+        elif command == CP_LDR_READ or command == CP_LDR_SCALE_TO:
             # Parse ldr response
             if len(data) < 6:
                 logger.warning('Received ldr response with not enough data!')
