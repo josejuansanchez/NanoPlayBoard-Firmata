@@ -141,9 +141,11 @@ NanoPlayBoard board;
 
 boolean updateLedmatrixChar = false;
 boolean updateLedmatrixPattern = false;
+boolean updateLedmatrixInLand = false;
 
 typedef struct {
   byte symbol;
+  byte number;
   byte pattern[5];
 } global_board_parameters;
 
@@ -682,11 +684,9 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
     case CP_LEDMATRIX_PRINT_IN_LAND:
       // Expects 1 byte with a number inside the range 0-99.
       if (argc >= 1) {
-        uint8_t number = argv[0];
-        if (number > 99) {
-          number = 99;
-        }
-        board.ledmatrix.printInLandscape(number);
+        updateLedmatrixInLand = true;
+        ledmatrix_parameters.number = argv[0];
+        board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
       }
       break;
   }
@@ -1078,6 +1078,10 @@ void loop()
 
     if (updateLedmatrixPattern) {
       board.ledmatrix.print(ledmatrix_parameters.pattern);
+    }
+
+    if (updateLedmatrixInLand) {
+      board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
     }
   }
 
