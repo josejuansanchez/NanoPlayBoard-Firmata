@@ -57,28 +57,28 @@
 #define MINIMUM_SAMPLING_INTERVAL   1
 
 // NanoPlayBoard specific Firmata SysEx commands:
-#define CP_COMMAND                  0x40  // Byte that identifies all NanoPlayBoard commands.
-#define CP_BUZZER_PLAY_TONE         0x20  // Play a tone on the speaker, expects the following bytes as data:
-                                          //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
-                                          //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
-#define CP_BUZZER_STOP_TONE         0x21  // Stop playing anything on the speaker.
+#define NPB_COMMAND                  0x40  // Byte that identifies all NanoPlayBoard commands.
+#define NPB_BUZZER_PLAY_TONE         0x20  // Play a tone on the speaker, expects the following bytes as data:
+                                           //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
+                                           //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
+#define NPB_BUZZER_STOP_TONE         0x21  // Stop playing anything on the speaker.
 
-#define CP_RGB_ON                   0X30
-#define CP_RGB_OFF                  0X31
-#define CP_RGB_TOGGLE               0X32
-#define CP_RGB_SET_COLOR            0X33
-#define CP_RGB_SET_INTENSITY        0X34
+#define NPB_RGB_ON                   0X30
+#define NPB_RGB_OFF                  0X31
+#define NPB_RGB_TOGGLE               0X32
+#define NPB_RGB_SET_COLOR            0X33
+#define NPB_RGB_SET_INTENSITY        0X34
 
-#define CP_POTENTIOMETER_READ       0x40
-#define CP_POTENTIOMETER_SCALE_TO   0x41
+#define NPB_POTENTIOMETER_READ       0x40
+#define NPB_POTENTIOMETER_SCALE_TO   0x41
 
-#define CP_LDR_READ                 0x50
-#define CP_LDR_SCALE_TO             0x51
+#define NPB_LDR_READ                 0x50
+#define NPB_LDR_SCALE_TO             0x51
 
-#define CP_LEDMATRIX_PRINT_CHAR     0x60
-#define CP_LEDMATRIX_PRINT_PATTERN  0x61
-#define CP_LEDMATRIX_PRINT_STRING   0x62
-#define CP_LEDMATRIX_PRINT_IN_LAND  0x63
+#define NPB_LEDMATRIX_PRINT_CHAR     0x60
+#define NPB_LEDMATRIX_PRINT_PATTERN  0x61
+#define NPB_LEDMATRIX_PRINT_STRING   0x62
+#define NPB_LEDMATRIX_PRINT_IN_LAND  0x63
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -515,11 +515,11 @@ void sendPotentiometerReadResponse() {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_POTENTIOMETER_READ;
+  response.data.type = NPB_POTENTIOMETER_READ;
   response.data.value = board.potentiometer.read();
 
   // Send the response.
-  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+  Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
 void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
@@ -532,11 +532,11 @@ void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_POTENTIOMETER_SCALE_TO;
+  response.data.type = NPB_POTENTIOMETER_SCALE_TO;
   response.data.value = board.potentiometer.scaleTo(toLow, toHigh);
 
   // Send the response.
-  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+  Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
 void sendLdrReadResponse() {
@@ -549,11 +549,11 @@ void sendLdrReadResponse() {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_LDR_READ;
+  response.data.type = NPB_LDR_READ;
   response.data.value = board.ldr.read();
 
   // Send the response.
-  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+  Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
 void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
@@ -566,16 +566,16 @@ void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
     uint8_t bytes[3];
   } response;
 
-  response.data.type = CP_LDR_SCALE_TO;
+  response.data.type = NPB_LDR_SCALE_TO;
   response.data.value = board.ldr.scaleTo(toLow, toHigh);
 
   // Send the response.
-  Firmata.sendSysex(CP_COMMAND, 3, response.bytes);
+  Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
-    case CP_BUZZER_PLAY_TONE:
+    case NPB_BUZZER_PLAY_TONE:
       // Play a tone on the speaker.
       // Expect: 2 bytes tone frequency, 2 bytes tone duration
       if (argc >= 4) {
@@ -590,23 +590,23 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_BUZZER_STOP_TONE:
+    case NPB_BUZZER_STOP_TONE:
       board.buzzer.stopTone();
       break;
 
-    case CP_RGB_ON:
+    case NPB_RGB_ON:
       board.rgb.on();
       break;
 
-    case CP_RGB_OFF:
+    case NPB_RGB_OFF:
       board.rgb.off();
       break;
 
-    case CP_RGB_TOGGLE:
+    case NPB_RGB_TOGGLE:
       board.rgb.toggle();
       break;
 
-    case CP_RGB_SET_COLOR:
+    case NPB_RGB_SET_COLOR:
       // Expect: 4 bytes pixel RGB value (as 7-bit bytes)
       if (argc >= 4) {
         // Red = 7 bits from byte 1 and 1 bit from byte 2
@@ -622,7 +622,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_RGB_SET_INTENSITY:
+    case NPB_RGB_SET_INTENSITY:
       // Expects 1 byte with the intensity as a value 0-100.
       if (argc >= 1) {
         uint8_t intensity = argv[0];
@@ -633,11 +633,11 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_POTENTIOMETER_READ:
+    case NPB_POTENTIOMETER_READ:
       sendPotentiometerReadResponse();
       break;
 
-    case CP_POTENTIOMETER_SCALE_TO:
+    case NPB_POTENTIOMETER_SCALE_TO:
       // Expect: 2 bytes for toLow and 2 bytes for toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
@@ -646,11 +646,11 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_LDR_READ:
+    case NPB_LDR_READ:
       sendLdrReadResponse();
       break;
 
-    case CP_LDR_SCALE_TO:
+    case NPB_LDR_SCALE_TO:
       // Expect: 2 bytes toLow, 2 bytes toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
@@ -659,7 +659,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_LEDMATRIX_PRINT_CHAR:
+    case NPB_LEDMATRIX_PRINT_CHAR:
       // Expects 1 byte with an ascii code inside the range 32-126.
       if (argc >= 1) {
         updateLedmatrixChar = true;
@@ -668,7 +668,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_LEDMATRIX_PRINT_PATTERN:
+    case NPB_LEDMATRIX_PRINT_PATTERN:
       // Expect: 5 bytes, 1 byte for each column
       if (argc >= 5) {
         updateLedmatrixPattern = true;
@@ -681,7 +681,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case CP_LEDMATRIX_PRINT_IN_LAND:
+    case NPB_LEDMATRIX_PRINT_IN_LAND:
       // Expects 1 byte with a number inside the range 0-99.
       if (argc >= 1) {
         updateLedmatrixInLand = true;
@@ -707,7 +707,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
 
   switch (command) {
     // NanoPlayBoard command processing
-    case CP_COMMAND:
+    case NPB_COMMAND:
       if (argc < 1) return;
       naNoPlayBoardCommand(argv[0], argc-1, argv+1);
       break;
