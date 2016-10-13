@@ -57,7 +57,8 @@
 #define MINIMUM_SAMPLING_INTERVAL   1
 
 // NanoPlayBoard specific Firmata SysEx commands:
-#define NPB_COMMAND                  0x40  // Byte that identifies all NanoPlayBoard commands.
+#define NPB_COMMAND                  0x10  // Byte that identifies all NanoPlayBoard commands.
+
 #define NPB_BUZZER_PLAY_TONE         0x20  // Play a tone on the speaker, expects the following bytes as data:
                                            //  - Frequency (hz) as 2 7-bit bytes (up to 2^14 hz, or about 16khz)
                                            //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
