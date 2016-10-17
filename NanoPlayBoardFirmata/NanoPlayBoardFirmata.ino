@@ -676,12 +676,10 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
     case NPB_LEDMATRIX_PRINT_PATTERN:
       // Expect: 5 bytes, 1 byte for each column
       if (argc >= 5) {
+        for(uint8_t i = 0; i < 5; i++) {
+          ledmatrix_parameters.pattern[i] = argv[i] & 0x7F;
+        }
         updateLedmatrixPattern = true;
-        ledmatrix_parameters.pattern[0] = argv[0] & 0x7F;
-        ledmatrix_parameters.pattern[1] = argv[1] & 0x7F;
-        ledmatrix_parameters.pattern[2] = argv[2] & 0x7F;
-        ledmatrix_parameters.pattern[3] = argv[3] & 0x7F;
-        ledmatrix_parameters.pattern[4] = argv[4] & 0x7F;
         board.ledmatrix.print(ledmatrix_parameters.pattern);
       }
       break;
