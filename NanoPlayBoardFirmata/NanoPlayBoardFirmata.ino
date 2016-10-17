@@ -156,7 +156,6 @@ typedef struct {
 
 global_board_parameters ledmatrix_parameters;
 
-
 /* utility functions */
 void wireWrite(byte data)
 {
@@ -708,28 +707,21 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_SERVO_T0:
-      // Expects 2 bytes, the first contain the servo id and the second a number inside the range 0-180
-      //if (argc >= 2) {
-
-        uint16_t degrees = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
-        ledmatrix_parameters.number = degrees;
-        updateLedmatrixInLand = true;        
-        board.ledmatrix.printInLandscape(degrees);
-        //board.servo[0].to(degrees);
-        board.servos.goForward();
-        
-        /*
-        uint8_t servo_id = argv[0];
-        uint8_t degrees = argv[1];
-        switch(servo_id) {
+      // Expects 3 bytes, the first contain the servo id and second-third a number inside the range 0-180
+      if (argc >= 3) {
+        uint8_t id_servo = argv[0];
+        uint16_t degrees = ((argv[2] & 0x7F) << 7) | (argv[1] & 0x7F);
+        switch(id_servo) {
           case 0:
-            board.servo[0].to(degrees);
+            analogWriteCallback(PIN_SERVO_1, degrees);
+            //board.servo[0].to(degrees);
             break;
           case 1:
-            board.servo[1].to(degrees);
+            analogWriteCallback(PIN_SERVO_2, degrees);
+            //board.servo[1].to(degrees);
             break;
-        }*/
-      //}
+        }
+      }
       break;
   }
 }
@@ -1075,6 +1067,12 @@ void setup()
   }
 
   systemResetCallback();  // reset to default config
+
+  // NanoPlayBoard servos
+  attachServo(PIN_SERVO_1, -1, -1);
+  attachServo(PIN_SERVO_2, -1, -1);
+  setPinModeCallback(PIN_SERVO_1, PIN_MODE_SERVO);
+  setPinModeCallback(PIN_SERVO_2, PIN_MODE_SERVO);
 }
 
 /*==============================================================================
