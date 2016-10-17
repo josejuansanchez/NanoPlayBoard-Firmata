@@ -581,12 +581,11 @@ void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
     case NPB_BUZZER_PLAY_TONE:
-      // Play a tone on the speaker.
-      // Expect: 2 bytes tone frequency, 2 bytes tone duration
+      // Expects 2 bytes for tone frequency and 2 bytes for tone duration
       if (argc >= 4) {
         uint16_t frequency = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t duration = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
-        // If duration is zero then interpret that as continuous tone playback.
+        // If duration is zero then interpret that as continuous tone playback
         if (duration == 0) {
           board.buzzer.playTone(frequency);
         } else {
@@ -612,7 +611,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_RGB_SET_COLOR:
-      // Expect: 4 bytes pixel RGB value (as 7-bit bytes)
+      // Expects 4 bytes with the RGB value (as 7-bit bytes)
       if (argc >= 4) {
         // Red = 7 bits from byte 1 and 1 bit from byte 2
         uint8_t r = (argv[0] << 1) | ((argv[1] & 0x7F) >> 6);
@@ -628,7 +627,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_RGB_SET_INTENSITY:
-      // Expects 1 byte with the intensity as a value 0-100.
+      // Expects 1 byte with the intensity as a value 0-100
       if (argc >= 1) {
         uint8_t intensity = argv[0];
         if (intensity > 100) {
@@ -643,7 +642,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_POTENTIOMETER_SCALE_TO:
-      // Expect: 2 bytes for toLow and 2 bytes for toHigh
+      // Expects 2 bytes for toLow and 2 bytes for toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
@@ -656,7 +655,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LDR_SCALE_TO:
-      // Expect: 2 bytes toLow, 2 bytes toHigh
+      // Expects 2 bytes toLow and 2 bytes toHigh
       if (argc >= 4) {
         uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
         uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
@@ -665,7 +664,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LEDMATRIX_PRINT_CHAR:
-      // Expects 1 byte with an ascii code inside the range 32-126.
+      // Expects 1 byte with an ascii code inside the range 32-126
       if (argc >= 1) {
         updateLedmatrixChar = true;
         ledmatrix_parameters.symbol = argv[0];
@@ -674,10 +673,10 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LEDMATRIX_PRINT_PATTERN:
-      // Expect: 5 bytes, 1 byte for each column
+      // Expects 5 bytes, 1 byte for each column
       if (argc >= 5) {
         for(uint8_t i = 0; i < 5; i++) {
-          ledmatrix_parameters.pattern[i] = argv[i] & 0x7F;
+          ledmatrix_parameters.pattern[i] = argv[i];
         }
         updateLedmatrixPattern = true;
         board.ledmatrix.print(ledmatrix_parameters.pattern);
@@ -685,7 +684,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LEDMATRIX_PRINT_IN_LAND:
-      // Expects 1 byte with a number inside the range 0-99.
+      // Expects 1 byte with a number inside the range 0-99
       if (argc >= 1) {
         updateLedmatrixInLand = true;
         ledmatrix_parameters.number = argv[0];
@@ -694,11 +693,13 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LEDMATRIX_PRINT_STRING:
+      // Expects 1 byte (inside the range 0-127) which contains the length of the string.
+      // Expects n bytes with the string (1 byte for each char).
       if (argc >= 1) {
-        uint8_t length = argv[0] & 0x7F;
+        uint8_t length = argv[0];
         char message[128];
         for(uint8_t i = 0; i < length; i++) {
-          message[i] = argv[i + 1] & 0x7F;
+          message[i] = argv[i + 1];
         }
         updateLedmatrixString = true;
         memcpy(ledmatrix_parameters.message, message, length);
