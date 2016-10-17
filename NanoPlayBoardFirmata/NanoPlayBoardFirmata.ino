@@ -81,6 +81,8 @@
 #define NPB_LEDMATRIX_PRINT_STRING   0x62
 #define NPB_LEDMATRIX_PRINT_IN_LAND  0x63
 
+#define NPB_SERVO_T0                 0x70
+
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
 // Method declarations are needed before use it.
@@ -143,11 +145,13 @@ NanoPlayBoard board;
 boolean updateLedmatrixChar = false;
 boolean updateLedmatrixPattern = false;
 boolean updateLedmatrixInLand = false;
+boolean updateLedmatrixString = false;
 
 typedef struct {
   byte symbol;
   byte number;
   byte pattern[5];
+  char message[128];
 } global_board_parameters;
 
 global_board_parameters ledmatrix_parameters;
@@ -690,6 +694,44 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
       }
       break;
+
+    case NPB_LEDMATRIX_PRINT_STRING:
+      if (argc >= 1) {
+        uint8_t length = argv[0] & 0x7F;
+        char message[128];
+        for(uint8_t i = 0; i < length; i++) {
+          message[i] = argv[i + 1] & 0x7F;
+        }
+        updateLedmatrixString = true;
+        memcpy(ledmatrix_parameters.message, message, length);
+        board.ledmatrix.print(ledmatrix_parameters.message);
+      }
+      break;
+
+    case NPB_SERVO_T0:
+      // Expects 2 bytes, the first contain the servo id and the second a number inside the range 0-180
+      //if (argc >= 2) {
+
+        uint16_t degrees = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
+        ledmatrix_parameters.number = degrees;
+        updateLedmatrixInLand = true;        
+        board.ledmatrix.printInLandscape(degrees);
+        //board.servo[0].to(degrees);
+        board.servos.goForward();
+        
+        /*
+        uint8_t servo_id = argv[0];
+        uint8_t degrees = argv[1];
+        switch(servo_id) {
+          case 0:
+            board.servo[0].to(degrees);
+            break;
+          case 1:
+            board.servo[1].to(degrees);
+            break;
+        }*/
+      //}
+      break;
   }
 }
 
@@ -1083,6 +1125,10 @@ void loop()
 
     if (updateLedmatrixInLand) {
       board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
+    }
+
+    if (updateLedmatrixString) {
+      board.ledmatrix.print(ledmatrix_parameters.message);
     }
   }
 
