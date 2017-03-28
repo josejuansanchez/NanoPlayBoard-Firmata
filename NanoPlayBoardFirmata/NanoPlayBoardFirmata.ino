@@ -80,6 +80,7 @@
 #define NPB_LEDMATRIX_PRINT_PATTERN  0x61
 #define NPB_LEDMATRIX_PRINT_STRING   0x62
 #define NPB_LEDMATRIX_PRINT_IN_LAND  0x63
+#define NPB_LEDMATRIX_STOP_PRINT     0x64
 
 #define NPB_SERVO_T0                 0x70
 
@@ -577,6 +578,18 @@ void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
   Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
+// Reset the parameters used to control the ledmatrix status
+void resetLedMatrixParameters(global_board_parameters *ledmatrix) {
+  ledmatrix->symbol = 0;
+  ledmatrix->number = 0;
+  for(int i = 0; i < 5; i++) {
+    ledmatrix->pattern[i] = 0;
+  }
+  for(int i = 0; i < 128; i++) {
+    ledmatrix->message[i] = '\0';
+  }
+}
+
 void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
   switch (command) {
     case NPB_BUZZER_PLAY_TONE:
@@ -704,6 +717,14 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         memcpy(ledmatrix_parameters.message, message, length);
         board.ledmatrix.print(ledmatrix_parameters.message);
       }
+      break;
+
+    case NPB_LEDMATRIX_STOP_PRINT:
+      updateLedmatrixChar = false;
+      updateLedmatrixPattern = false;
+      updateLedmatrixInLand = false;
+      updateLedmatrixString = false;
+      resetLedMatrixParameters(&ledmatrix_parameters);
       break;
 
     case NPB_SERVO_T0:
