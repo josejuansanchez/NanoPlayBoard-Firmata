@@ -143,19 +143,18 @@ boolean isResetting = false;
 /* NanoPlayBoard globals */
 NanoPlayBoard board;
 
-boolean updateLedmatrixChar = false;
-boolean updateLedmatrixPattern = false;
-boolean updateLedmatrixInLand = false;
-boolean updateLedmatrixString = false;
-
 typedef struct {
   byte symbol;
   byte number;
   byte pattern[5];
   char message[128];
-} global_board_parameters;
+  boolean updateLedmatrixChar;
+  boolean updateLedmatrixPattern;
+  boolean updateLedmatrixInLand;
+  boolean updateLedmatrixString;
+} npb_ledmatrix_status;
 
-global_board_parameters ledmatrix_parameters;
+npb_ledmatrix_status ledmatrix_status;
 
 /* utility functions */
 void wireWrite(byte data)
@@ -579,14 +578,19 @@ void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
 }
 
 // Reset the parameters used to control the ledmatrix status
-void resetLedMatrixParameters(global_board_parameters *ledmatrix) {
-  ledmatrix->symbol = 0;
-  ledmatrix->number = 0;
+void resetLedMatrixStatus(npb_ledmatrix_status *ledmatrix_status) {
+  ledmatrix_status->updateLedmatrixChar = false;
+  ledmatrix_status->updateLedmatrixPattern = false;
+  ledmatrix_status->updateLedmatrixInLand = false;
+  ledmatrix_status->updateLedmatrixString = false;
+
+  ledmatrix_status->symbol = 0;
+  ledmatrix_status->number = 0;
   for(int i = 0; i < 5; i++) {
-    ledmatrix->pattern[i] = 0;
+    ledmatrix_status->pattern[i] = 0;
   }
   for(int i = 0; i < 128; i++) {
-    ledmatrix->message[i] = '\0';
+    ledmatrix_status->message[i] = '\0';
   }
 }
 
@@ -678,9 +682,9 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
     case NPB_LEDMATRIX_PRINT_CHAR:
       // Expects 1 byte with an ascii code inside the range 32-126
       if (argc >= 1) {
-        updateLedmatrixChar = true;
-        ledmatrix_parameters.symbol = argv[0];
-        board.ledmatrix.print(ledmatrix_parameters.symbol);
+        ledmatrix_status.updateLedmatrixChar = true;
+        ledmatrix_status.symbol = argv[0];
+        board.ledmatrix.print(ledmatrix_status.symbol);
       }
       break;
 
@@ -688,19 +692,19 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       // Expects 5 bytes, 1 byte for each column
       if (argc >= 5) {
         for(uint8_t i = 0; i < 5; i++) {
-          ledmatrix_parameters.pattern[i] = argv[i];
+          ledmatrix_status.pattern[i] = argv[i];
         }
-        updateLedmatrixPattern = true;
-        board.ledmatrix.print(ledmatrix_parameters.pattern);
+        ledmatrix_status.updateLedmatrixPattern = true;
+        board.ledmatrix.print(ledmatrix_status.pattern);
       }
       break;
 
     case NPB_LEDMATRIX_PRINT_IN_LAND:
       // Expects 1 byte with a number inside the range 0-99
       if (argc >= 1) {
-        updateLedmatrixInLand = true;
-        ledmatrix_parameters.number = argv[0];
-        board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
+        ledmatrix_status.updateLedmatrixInLand = true;
+        ledmatrix_status.number = argv[0];
+        board.ledmatrix.printInLandscape(ledmatrix_status.number);
       }
       break;
 
@@ -713,18 +717,14 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
         for(uint8_t i = 0; i < length; i++) {
           message[i] = argv[i + 1];
         }
-        updateLedmatrixString = true;
-        memcpy(ledmatrix_parameters.message, message, length);
-        board.ledmatrix.print(ledmatrix_parameters.message);
+        ledmatrix_status.updateLedmatrixString = true;
+        memcpy(ledmatrix_status.message, message, length);
+        board.ledmatrix.print(ledmatrix_status.message);
       }
       break;
 
     case NPB_LEDMATRIX_STOP_PRINT:
-      updateLedmatrixChar = false;
-      updateLedmatrixPattern = false;
-      updateLedmatrixInLand = false;
-      updateLedmatrixString = false;
-      resetLedMatrixParameters(&ledmatrix_parameters);
+      resetLedMatrixStatus(&ledmatrix_status);
       break;
 
     case NPB_SERVO_T0:
@@ -1133,20 +1133,20 @@ void loop()
       }
     }
 
-    if (updateLedmatrixChar) {
-      board.ledmatrix.print(ledmatrix_parameters.symbol);
+    if (ledmatrix_status.updateLedmatrixChar) {
+      board.ledmatrix.print(ledmatrix_status.symbol);
     }
 
-    if (updateLedmatrixPattern) {
-      board.ledmatrix.print(ledmatrix_parameters.pattern);
+    if (ledmatrix_status.updateLedmatrixPattern) {
+      board.ledmatrix.print(ledmatrix_status.pattern);
     }
 
-    if (updateLedmatrixInLand) {
-      board.ledmatrix.printInLandscape(ledmatrix_parameters.number);
+    if (ledmatrix_status.updateLedmatrixInLand) {
+      board.ledmatrix.printInLandscape(ledmatrix_status.number);
     }
 
-    if (updateLedmatrixString) {
-      board.ledmatrix.print(ledmatrix_parameters.message);
+    if (ledmatrix_status.updateLedmatrixString) {
+      board.ledmatrix.print(ledmatrix_status.message);
     }
   }
 
