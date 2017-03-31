@@ -98,7 +98,7 @@
 #define NPB_DHT_READ_HUMIDITY        0x46
 
 #define NPB_BUTTON_TOP_IS_PRESSED    0x47
-#define NPB_BUTTON_BOTTOM_IS_PRESSED 0x48
+#define NPB_BUTTON_DOWN_IS_PRESSED   0x48
 #define NPB_BUTTON_LEFT_IS_PRESSED   0x49
 #define NPB_BUTTON_RIGHT_IS_PRESSED  0x50
 
@@ -627,6 +627,74 @@ void sendUltrasoundReadResponse() {
   Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
+void sendIsTopButtonPressedResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint8_t value;
+    } data;
+    uint8_t bytes[2];
+  } response;
+
+  response.data.type = NPB_BUTTON_TOP_IS_PRESSED;
+  response.data.value = board.buttons.top.isPressed();
+
+  // Send the response.
+  Firmata.sendSysex(NPB_COMMAND, 2, response.bytes);
+}
+
+void sendIsBottomButtonPressedResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint8_t value;
+    } data;
+    uint8_t bytes[2];
+  } response;
+
+  response.data.type = NPB_BUTTON_DOWN_IS_PRESSED;
+  response.data.value = board.buttons.down.isPressed();
+
+  // Send the response.
+  Firmata.sendSysex(NPB_COMMAND, 2, response.bytes);
+}
+
+void sendIsLeftButtonPressedResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint8_t value;
+    } data;
+    uint8_t bytes[2];
+  } response;
+
+  response.data.type = NPB_BUTTON_LEFT_IS_PRESSED;
+  response.data.value = board.buttons.left.isPressed();
+
+  // Send the response.
+  Firmata.sendSysex(NPB_COMMAND, 2, response.bytes);
+}
+
+void sendIsRightButtonPressedResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint8_t value;
+    } data;
+    uint8_t bytes[2];
+  } response;
+
+  response.data.type = NPB_BUTTON_RIGHT_IS_PRESSED;
+  response.data.value = board.buttons.right.isPressed();
+
+  // Send the response.
+  Firmata.sendSysex(NPB_COMMAND, 2, response.bytes);
+}
+
 // Reset the parameters used to control the ledmatrix status
 void resetLedMatrixStatus(npb_ledmatrix_status *ledmatrix_status) {
   ledmatrix_status->updateLedmatrixChar = false;
@@ -797,6 +865,22 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
 
     case NPB_ULTRASOUND_READ:
       sendUltrasoundReadResponse();
+      break;
+
+    case NPB_BUTTON_TOP_IS_PRESSED:
+      sendIsTopButtonPressedResponse();
+      break;
+
+    case NPB_BUTTON_DOWN_IS_PRESSED:
+      sendIsBottomButtonPressedResponse();
+      break;
+
+    case NPB_BUTTON_LEFT_IS_PRESSED:
+      sendIsLeftButtonPressedResponse();
+      break;
+
+    case NPB_BUTTON_RIGHT_IS_PRESSED:
+      sendIsRightButtonPressedResponse();
       break;
   }
 }
