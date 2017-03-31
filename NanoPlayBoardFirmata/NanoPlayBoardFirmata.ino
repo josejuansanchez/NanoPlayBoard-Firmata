@@ -64,25 +64,47 @@
                                            //  - Duration (ms) as 2 7-bit bytes (up to 2^14 ms, or about 16s)
 #define NPB_BUZZER_STOP_TONE         0x21  // Stop playing anything on the speaker.
 
-#define NPB_RGB_ON                   0X30
-#define NPB_RGB_OFF                  0X31
-#define NPB_RGB_TOGGLE               0X32
-#define NPB_RGB_SET_COLOR            0X33
-#define NPB_RGB_SET_INTENSITY        0X34
+#define NPB_RGB_ON                   0x22
+#define NPB_RGB_OFF                  0x23
+#define NPB_RGB_TOGGLE               0x24
+#define NPB_RGB_SET_COLOR            0x25
+#define NPB_RGB_SET_INTENSITY        0x26
 
-#define NPB_POTENTIOMETER_READ       0x40
-#define NPB_POTENTIOMETER_SCALE_TO   0x41
+#define NPB_POTENTIOMETER_READ       0x27
+#define NPB_POTENTIOMETER_SCALE_TO   0x28
 
-#define NPB_LDR_READ                 0x50
-#define NPB_LDR_SCALE_TO             0x51
+#define NPB_LDR_READ                 0x29
+#define NPB_LDR_SCALE_TO             0x30
 
-#define NPB_LEDMATRIX_PRINT_CHAR     0x60
-#define NPB_LEDMATRIX_PRINT_PATTERN  0x61
-#define NPB_LEDMATRIX_PRINT_STRING   0x62
-#define NPB_LEDMATRIX_PRINT_IN_LAND  0x63
-#define NPB_LEDMATRIX_STOP_PRINT     0x64
+#define NPB_LEDMATRIX_PRINT_CHAR     0x31
+#define NPB_LEDMATRIX_PRINT_PATTERN  0x32
+#define NPB_LEDMATRIX_PRINT_STRING   0x33
+#define NPB_LEDMATRIX_PRINT_IN_LAND  0x34
+#define NPB_LEDMATRIX_STOP_PRINT     0x35
 
-#define NPB_SERVO_T0                 0x70
+#define NPB_SERVO_TO                 0x36
+#define NPB_SERVOS_GO_FORWARD        0x37
+#define NPB_SERVOS_GO_BACKWARD       0x38
+#define NPB_SERVOS_GO_RIGHT          0x39
+#define NPB_SERVOS_GO_LEFT           0x40
+#define NPB_SERVOS_SET_SPEED         0x41
+
+#define NPB_ROTARY_ENCODER_READ      0x42
+
+#define NPB_ULTRASOUND_READ          0x43
+#define NPB_ULTRASOUND_SCALE_TO      0x44
+
+#define NPB_DHT_READ_TEMPERATURE     0x45
+#define NPB_DHT_READ_HUMIDITY        0x46
+
+#define NPB_BUTTON_TOP_IS_PRESSED    0x47
+#define NPB_BUTTON_BOTTOM_IS_PRESSED 0x48
+#define NPB_BUTTON_LEFT_IS_PRESSED   0x49
+#define NPB_BUTTON_RIGHT_IS_PRESSED  0x50
+
+#define NPB_ACCELEROMETER_GET_X      0x51
+#define NPB_ACCELEROMETER_GET_Y      0x52
+#define NPB_ACCELEROMETER_GET_Z      0x53
 
 // TODO: Fix this issue. Temporary solution.
 // Workaround to solve a well known issue with method declarations.
@@ -526,12 +548,12 @@ void sendPotentiometerReadResponse() {
   Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
 }
 
-void sendPotentiometerScaleToResponse(uint16_t toLow, uint16_t toHigh) {
+void sendPotentiometerScaleToResponse(int toLow, int toHigh) {
   // Construct a response data packet and send it.
   union {
     struct {
       uint8_t type;
-      uint16_t value;
+      int value;
     } data;
     uint8_t bytes[3];
   } response;
@@ -572,6 +594,34 @@ void sendLdrScaleToResponse(uint16_t toLow, uint16_t toHigh) {
 
   response.data.type = NPB_LDR_SCALE_TO;
   response.data.value = board.ldr.scaleTo(toLow, toHigh);
+
+  // Send the response.
+  Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
+}
+
+void sendUltrasoundReadResponse() {
+  // Construct a response data packet and send it.
+  union {
+    struct {
+      uint8_t type;
+      uint16_t value;
+    } data;
+    uint8_t bytes[3];
+  } response;
+
+  response.data.type = NPB_ULTRASOUND_READ;
+
+  // TODO: Temporay solution
+  //response.data.value = board.ultrasound.pingCm();
+
+  pinMode(PIN_SONAR_TRIGGER, OUTPUT);
+  digitalWrite(PIN_SONAR_TRIGGER, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_SONAR_TRIGGER, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(PIN_SONAR_TRIGGER, LOW);
+  pinMode(PIN_SONAR_ECHO, INPUT);
+  response.data.value = pulseIn(PIN_SONAR_ECHO, HIGH) / 29.2;
 
   // Send the response.
   Firmata.sendSysex(NPB_COMMAND, 3, response.bytes);
@@ -660,8 +710,8 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
     case NPB_POTENTIOMETER_SCALE_TO:
       // Expects 2 bytes for toLow and 2 bytes for toHigh
       if (argc >= 4) {
-        uint16_t toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
-        uint16_t toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
+        int toLow = ((argv[1] & 0x7F) << 7) | (argv[0] & 0x7F);
+        int toHigh = ((argv[3] & 0x7F) << 7) | (argv[2] & 0x7F);
         sendPotentiometerScaleToResponse(toLow, toHigh);
       }
       break;
@@ -727,7 +777,7 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       resetLedMatrixStatus(&ledmatrix_status);
       break;
 
-    case NPB_SERVO_T0:
+    case NPB_SERVO_TO:
       // Expects 3 bytes, the first contain the servo id and second-third a number inside the range 0-180
       if (argc >= 3) {
         uint8_t id_servo = argv[0];
@@ -743,6 +793,10 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
             break;
         }
       }
+      break;
+
+    case NPB_ULTRASOUND_READ:
+      sendUltrasoundReadResponse();
       break;
   }
 }
