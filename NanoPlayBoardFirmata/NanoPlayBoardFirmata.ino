@@ -79,7 +79,7 @@
 #define NPB_LEDMATRIX_PRINT_CHAR     0x31
 #define NPB_LEDMATRIX_PRINT_PATTERN  0x32
 #define NPB_LEDMATRIX_PRINT_STRING   0x33
-#define NPB_LEDMATRIX_PRINT_IN_LAND  0x34
+#define NPB_LEDMATRIX_PRINT_NUMBER   0x34
 #define NPB_LEDMATRIX_STOP_PRINT     0x35
 
 #define NPB_SERVO_TO                 0x36
@@ -172,7 +172,7 @@ typedef struct {
   char message[128];
   boolean updateLedmatrixChar;
   boolean updateLedmatrixPattern;
-  boolean updateLedmatrixInLand;
+  boolean updateLedmatrixNumber;
   boolean updateLedmatrixString;
 } npb_ledmatrix_status;
 
@@ -699,7 +699,7 @@ void sendIsRightButtonPressedResponse() {
 void resetLedMatrixStatus(npb_ledmatrix_status *ledmatrix_status) {
   ledmatrix_status->updateLedmatrixChar = false;
   ledmatrix_status->updateLedmatrixPattern = false;
-  ledmatrix_status->updateLedmatrixInLand = false;
+  ledmatrix_status->updateLedmatrixNumber = false;
   ledmatrix_status->updateLedmatrixString = false;
 
   ledmatrix_status->symbol = 0;
@@ -817,12 +817,12 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       }
       break;
 
-    case NPB_LEDMATRIX_PRINT_IN_LAND:
+    case NPB_LEDMATRIX_PRINT_NUMBER:
       // Expects 1 byte with a number inside the range 0-99
       if (argc >= 1) {
-        ledmatrix_status.updateLedmatrixInLand = true;
+        ledmatrix_status.updateLedmatrixNumber = true;
         ledmatrix_status.number = argv[0];
-        board.ledmatrix.printInLandscape(ledmatrix_status.number);
+        board.ledmatrix.printNumber(ledmatrix_status.number);
       }
       break;
 
@@ -1279,8 +1279,8 @@ void loop()
       board.ledmatrix.print(ledmatrix_status.pattern);
     }
 
-    if (ledmatrix_status.updateLedmatrixInLand) {
-      board.ledmatrix.printInLandscape(ledmatrix_status.number);
+    if (ledmatrix_status.updateLedmatrixNumber) {
+      board.ledmatrix.printNumber(ledmatrix_status.number);
     }
 
     if (ledmatrix_status.updateLedmatrixString) {
