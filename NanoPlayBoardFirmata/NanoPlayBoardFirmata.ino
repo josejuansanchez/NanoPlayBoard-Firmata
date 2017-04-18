@@ -169,7 +169,7 @@ typedef struct {
   byte symbol;
   byte number;
   byte pattern[5];
-  char message[128];
+  char message[32];
   boolean updateLedmatrixChar;
   boolean updateLedmatrixPattern;
   boolean updateLedmatrixNumber;
@@ -818,8 +818,6 @@ void naNoPlayBoardCommand(byte command, byte argc, byte* argv) {
       break;
 
     case NPB_LEDMATRIX_PRINT_NUMBER:
-      board.rgb.on();
-
       // Expects 1 byte with a number inside the range 0-99
       if (argc >= 1) {
         ledmatrix_status.updateLedmatrixNumber = true;
